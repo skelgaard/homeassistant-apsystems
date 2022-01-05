@@ -149,22 +149,21 @@ class ApsystemsSensor(Entity):
         if ap_data is None:
             self._state = STATE_UNAVAILABLE
             return
-
         index = self._metadata[0]
         value = ap_data[index]
         if isinstance(value, list):
             value = value[-1]
 
-        eleven_hours = 11 * 60 * 60 * 1000  # to move apsystems timestamp to UTC
+        offset_hours = 7 * 60 * 60 * 1000  # to move apsystems timestamp to UTC
 
         #get timestamp
         index_time = SENSORS[SENSOR_TIME][0]
         timestamp = ap_data[index_time][-1]
 
         if value == timestamp:  # current attribute is the timestamp, so fix it
-            value = int(value) + eleven_hours
+            value = int(value) + offset_hours
             value = datetime.fromtimestamp(value / 1000)
-        timestamp = int(timestamp) + eleven_hours
+        timestamp = int(timestamp) + offset_hours
 
         self._attributes[EXTRA_TIMESTAMP] = timestamp
 
@@ -220,6 +219,7 @@ class APsystemsFetcher:
         try:
             browser = await self.login()
 
+            #TODO should this not have offset too on it ?
             post_data = {'queryDate': datetime.today().strftime("%Y%m%d"),
                       'selectedValue': self._ecu_id,
                       'systemId': self._system_id}
@@ -233,7 +233,6 @@ class APsystemsFetcher:
             result_data = await self._hass.async_add_executor_job(
                 session.request, "POST", self.url_data, None, post_data, self.headers, browser.cookiejar
             )
-
             _LOGGER.debug("status code data: " + str(result_data.status_code))
 
             if result_data.status_code == 204:
@@ -253,12 +252,12 @@ class APsystemsFetcher:
             await self.run()
 
         # continue None after run(), there is no data for this day
-        if self.cache is None:
-            return self.cache
+        #if self.cache is None:
+        #    return self.cache
 
         # rules to check cache
-        eleven_hours = 11 * 60 * 60 * 1000
-        timestamp_event = int(self.cache['time'][-1]) + eleven_hours  # apsystems have 8h delayed in timestamp from UTC
+        offset_hours = 7 * 60 * 60 * 1000
+        timestamp_event = int(self.cache['time'][-1]) + offset_hours  # apsystems have 8h delayed in timestamp from UTC
         timestamp_now = int(round(time.time() * 1000))
         cache_time = 6 * 60 * 1000  # 6 minutes
         request_time = 20 * 1000  # 20 seconds to avoid request what is already requested

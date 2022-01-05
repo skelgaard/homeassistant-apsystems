@@ -1,8 +1,5 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs) [![apsystems](https://img.shields.io/github/v/release/bgbraga/homeassistant-apsystems.svg)](https://github.com/bgbraga/homeassistant-apsystems) ![Maintenance](https://img.shields.io/maintenance/yes/2021.svg)
 
-##### Please contribute:
-[![Buy me a beer!](https://img.shields.io/badge/Buy%20me%20a%20beer!-%F0%9F%8D%BA-yellow.svg)](https://www.buymeacoffee.com/bgbraga)
-
 # APsystems Sensor for Home Assistant
 This component simplifies the integration of a APsystems inverter:
 * creates up to individuals sensors for easy display or use in automations
@@ -19,7 +16,7 @@ It is only called from sunset to sunrise and the sensor going offline at night
 
 ### Installation
 Use [HACS](https://custom-components.github.io/hacs/) to point to this github URL:
-https://github.com/bgbraga/homeassistant-apsystems
+https://github.com/skelgaard/homeassistant-apsystems
 
 ### Configuration
 Use your apsystemsema.com user to configure the configuration.yaml.
@@ -47,6 +44,6 @@ Get the system id inside the ```managementClickCustomer()```.
 
 3 - sunset attribute could be on or off
 
-[![Buy me a beer!](https://img.shields.io/badge/Buy%20me%20a%20beer!-%F0%9F%8D%BA-yellow.svg)](https://www.buymeacoffee.com/bgbraga)
 
-
+### Thanx
+Thanx to the author bgbraga(https://github.com/bgbraga/) for his work, but as he has left this is in a none working stage, i have fixed the problems
