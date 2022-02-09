@@ -1,5 +1,8 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs) [![apsystems](https://img.shields.io/github/v/release/skelgaard/homeassistant-apsystems.svg)](https://github.com/skelgaard/homeassistant-apsystems) ![Maintenance](https://img.shields.io/maintenance/yes/2022.svg)
 
+# Not working at current
+Cause of changes of the login method on their apsystemsema.com i can't at current login to their system and therefor not able to fetch the data... i'm trying to find another way to get the data.
+
 # APsystems Sensor for Home Assistant
 This component simplifies the integration of a APsystems inverter:
 * creates up to individuals sensors for easy display or use in automations
