@@ -12,8 +12,7 @@ from datetime import datetime, timedelta, date
 import time
 import mechanize
 
-CONF_USERNAME = 'username'
-CONF_PASSWORD = 'password'
+CONF_AUTH_ID = 'authId'
 CONF_SYSTEM_ID = 'systemId'
 CONF_ECU_ID = 'ecuId'
 CONF_NAME = 'name'
@@ -33,8 +32,7 @@ from homeassistant.const import (
     )
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_USERNAME): cv.string,
-    vol.Required(CONF_PASSWORD): cv.string,
+    vol.Required(CONF_AUTH_ID): cv.string,
     vol.Required(CONF_SYSTEM_ID): cv.string,
     vol.Required(CONF_ECU_ID): cv.string,
     vol.Optional(CONF_NAME, default='APsystems'): cv.string,
@@ -55,20 +53,19 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    username = config[CONF_USERNAME]
-    password = config[CONF_PASSWORD]
+    auth_id = config[CONF_AUTH_ID]
     system_id = config[CONF_SYSTEM_ID]
     ecu_id = config[CONF_ECU_ID]
     sunset = config[CONF_SUNSET]
 
     #data fetcher
-    fetcher = APsystemsFetcher(hass, username, password, system_id, ecu_id)
+    fetcher = APsystemsFetcher(hass, auth_id, system_id, ecu_id)
 
     sensors = []
     for type in SENSORS:
         metadata = SENSORS[type]
         sensor_name = config.get(CONF_NAME).lower() + "_" + type
-        sensor = ApsystemsSensor(sensor_name, username, password, system_id, sunset, fetcher, metadata)
+        sensor = ApsystemsSensor(sensor_name, auth_id, system_id, sunset, fetcher, metadata)
         sensors.append(sensor)
 
     async_add_entities(sensors, True)
@@ -76,12 +73,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 class ApsystemsSensor(Entity):
     """Representation of a Sensor."""
 
-    def __init__(self, sensor_name, username, password, system_id, sunset, fetcher, metadata):
+    def __init__(self, sensor_name, auth_id, system_id, sunset, fetcher, metadata):
         """Initialize the sensor."""
         self._state = None
         self._name = sensor_name
-        self._username = username
-        self._password = password
+        self._auth_id = auth_id
         self._system_id = system_id
         self._sunset = sunset
         self._fetcher = fetcher
@@ -182,37 +178,27 @@ class ApsystemsSensor(Entity):
 
 
 class APsystemsFetcher:
-    url_login = "https://apsystemsema.com/ema/loginEMA.action"
+    url_login = "https://apsystemsema.com/ema/intoDemoUser.action?id="
     url_data = "https://apsystemsema.com/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax"
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0'}
     cache = None
     cache_timestamp = None
     running = False
 
-    def __init__(self, hass, username, password, system_id, ecu_id):
+    def __init__(self, hass, auth_id, system_id, ecu_id):
         self._hass = hass
-        self._username = username
-        self._password = password
+        self._auth_id = auth_id
         self._system_id = system_id
         self._ecu_id = ecu_id
         self._today = datetime.fromisoformat(date.today().isoformat())
 
     async def login(self):
-        browser = mechanize.Browser()
+        s = requests.Session()
 
-        await self._hass.async_add_executor_job(
-            browser.open, self.url_login
+        r = await self._hass.async_add_executor_job(
+            s.get, self.url_login + self._auth_id
         )
-        browser.select_form(nr=0)
-        browser.form.set_all_readonly(False)
-        browser.form['username'] = self._username
-        browser.form['password'] = self._password
-
-        await self._hass.async_add_executor_job(
-            browser.submit
-        )
-
-        return browser
+        return s
 
     async def run(self):
         self.running = True
@@ -229,10 +215,10 @@ class APsystemsFetcher:
 
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             _LOGGER.debug('starting: ' + now)
-            session = requests.sessions.session()
             result_data = await self._hass.async_add_executor_job(
-                session.request, "POST", self.url_data, None, post_data, self.headers, browser.cookiejar
+               browser.post, self.url_data, post_data
             )
+
             _LOGGER.debug("status code data: " + str(result_data.status_code))
 
             if result_data.status_code == 204:
