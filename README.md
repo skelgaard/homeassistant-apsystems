@@ -28,7 +28,7 @@ Use your apsystemsema.com to configure the configuration.yaml.
 # Minimal configuration.yaml entry:
 sensor:
   - platform: apsystems
-    authId: apsystemsema_user
+    authId: apsystemsem_authid
     systemId: apsystemsema_system_id
     ecuId: apsystemsema_ecu_id
     sunset: off
@@ -52,3 +52,5 @@ Get the system id inside the ```managementClickCustomer()```.
 
 ### Thanx
 Thanx to the author bgbraga(https://github.com/bgbraga/) for his work, but as he has left this is in a none working stage, i have fixed the problems
+
+[![Buy me a beer!](https://img.shields.io/badge/Buy%20me%20a%20beer!-%F0%9F%8D%BA-yellow.svg)](https://www.paypal.com/donate/?hosted_button_id=RWTHA7XKSMSZC)

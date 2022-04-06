@@ -18,13 +18,14 @@ Use your apsystemsema.com user to configure the configuration.yaml:
 ```yaml
 sensor:
   - platform: apsystems
-    username: apsystemsema_user
-    password: !secret apsystems
+    authId: apsystemsem_authid
     systemId: apsystemsema_system_id
     ecuId: apsystemsema_ecu_id
     sunset: off
 ```
-1 - your systemId is found at apsystemsema.com. See the page source code and at the Settings Menu there is a code like that:
+1 - set "Allow visitors to access to this system" and get the authid from here
+
+2 - your systemId is found at apsystemsema.com. See the page source code and at the Settings Menu there is a code like that:
 ```html
 <span>Settings</span>
 <ul>
@@ -34,9 +35,8 @@ sensor:
 ```
 Get the system id inside the ```managementClickCustomer()```.
 
-2 - There is an ecu id data at https://apsystemsema.com/ema/security/optmainmenu/intoLargeReport.action
+3 - There is an ecu id data at https://apsystemsema.com/ema/security/optmainmenu/intoLargeReport.action
 
-3 - sunset attribute could be on or off
+4 - sunset attribute could be on or off
 
-[![Buy me a beer!](https://img.shields.io/badge/Buy%20me%20a%20beer!-%F0%9F%8D%BA-yellow.svg)](https://www.buymeacoffee.com/bgbraga)
-
+[![Buy me a beer!](https://img.shields.io/badge/Buy%20me%20a%20beer!-%F0%9F%8D%BA-yellow.svg)](https://www.paypal.com/donate/?hosted_button_id=RWTHA7XKSMSZC)
