@@ -178,9 +178,9 @@ class ApsystemsSensor(Entity):
 
 
 class APsystemsFetcher:
-    url_login = "https://apsystemsema.com/ema/intoDemoUser.action?id="
-    url_data = "https://apsystemsema.com/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax"
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0'}
+    url_login = "https://www.apsystemsema.com/ema/intoDemoUser.action?id="
+    url_data = "https://www.apsystemsema.com/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax"
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Chrome/50.0.2661.102 Firefox/62.0'}
     cache = None
     cache_timestamp = None
     running = False
@@ -196,7 +196,7 @@ class APsystemsFetcher:
         s = requests.Session()
 
         r = await self._hass.async_add_executor_job(
-            s.get, self.url_login + self._auth_id
+             s.request, "GET", self.url_login + self._auth_id, None, None, self.headers
         )
         return s
 
@@ -213,10 +213,11 @@ class APsystemsFetcher:
             _LOGGER.debug('post_data:')
             _LOGGER.debug(post_data)
 
+            s = requests.session()
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             _LOGGER.debug('starting: ' + now)
             result_data = await self._hass.async_add_executor_job(
-               browser.post, self.url_data, post_data
+             s.request, "POST", self.url_data, None, post_data, self.headers, browser.cookies.get_dict()
             )
 
             _LOGGER.debug("status code data: " + str(result_data.status_code))
