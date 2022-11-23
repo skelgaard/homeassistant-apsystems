@@ -239,17 +239,18 @@ class APsystemsFetcher:
             await self.run()
 
         # continue None after run(), there is no data for this day
-        #if self.cache is None:
-        #    return self.cache
+        if self.cache is None:
+            _LOGGER.debug('No data')
+            return self.cache
+        else:
+            # rules to check cache
+            offset_hours = 7 * 60 * 60 * 1000
+            timestamp_event = int(self.cache['time'][-1]) + offset_hours  # apsystems have 8h delayed in timestamp from UTC
+            timestamp_now = int(round(time.time() * 1000))
+            cache_time = 6 * 60 * 1000  # 6 minutes
+            request_time = 20 * 1000  # 20 seconds to avoid request what is already requested
 
-        # rules to check cache
-        offset_hours = 7 * 60 * 60 * 1000
-        timestamp_event = int(self.cache['time'][-1]) + offset_hours  # apsystems have 8h delayed in timestamp from UTC
-        timestamp_now = int(round(time.time() * 1000))
-        cache_time = 6 * 60 * 1000  # 6 minutes
-        request_time = 20 * 1000  # 20 seconds to avoid request what is already requested
-
-        if (timestamp_now - timestamp_event > cache_time) and (timestamp_now - self.cache_timestamp > request_time):
-            await self.run()
+            if (timestamp_now - timestamp_event > cache_time) and (timestamp_now - self.cache_timestamp > request_time):
+                await self.run()
 
         return self.cache
