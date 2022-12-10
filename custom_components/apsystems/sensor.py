@@ -37,7 +37,9 @@ SENSOR_POWER_MAX = "power_max_day"
 SENSOR_TIME = "date"
 
 # to move apsystems timestamp to UTC
-OFFSET_SECONDS = timedelta(hours=7).total_seconds()
+OFFSET_MS = (
+    timedelta(hours=7).total_seconds() / timedelta(milliseconds=1).total_seconds()
+)
 
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
@@ -218,9 +220,9 @@ class ApsystemsSensor(SensorEntity):
         timestamp = ap_data[index_time][-1]
 
         if value == timestamp:  # current attribute is the timestamp, so fix it
-            value = int(value) + OFFSET_SECONDS
+            value = int(value) + OFFSET_MS
             value = datetime.fromtimestamp(value / 1000)
-        timestamp = int(timestamp) + OFFSET_SECONDS
+        timestamp = int(timestamp) + OFFSET_MS
 
         self._attributes[EXTRA_TIMESTAMP] = timestamp
 
@@ -316,7 +318,7 @@ class APsystemsFetcher:
         else:
             # rules to check cache
             timestamp_event = (
-                int(self.cache["time"][-1]) + OFFSET_SECONDS
+                int(self.cache["time"][-1]) + OFFSET_MS
             )  # apsystems have 8h delayed in timestamp from UTC
             timestamp_now = int(round(time.time() * 1000))
             cache_time = 6 * 60 * 1000  # 6 minutes
