@@ -13,7 +13,7 @@ import time
 import mechanize
 
 CONF_AUTH_ID = 'authId'
-CONF_SYSTEM_ID = 'systemId'
+CONF_SYSTEM_ID = 'customer-id'
 CONF_ECU_ID = 'ecuId'
 CONF_NAME = 'name'
 CONF_SUNSET = 'sunset'
@@ -208,7 +208,7 @@ class APsystemsFetcher:
             #TODO should this not have offset too on it ?
             post_data = {'queryDate': datetime.today().strftime("%Y%m%d"),
                       'selectedValue': self._ecu_id,
-                      'systemId': self._system_id}
+                      'customer-id': self._system_id}
 
             _LOGGER.debug('post_data:')
             _LOGGER.debug(post_data)
