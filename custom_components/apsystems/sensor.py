@@ -1,56 +1,100 @@
-import logging
-from homeassistant.helpers.entity import Entity
-import homeassistant.helpers.config_validation as cv
-from homeassistant.components.sensor import PLATFORM_SCHEMA
-from homeassistant.helpers.sun import get_astral_event_date
-from homeassistant.util.dt import utcnow as dt_utcnow, as_local
-import voluptuous as vol
-import requests
+from __future__ import annotations
+
 import asyncio
-from requests.adapters import HTTPAdapter
-from datetime import datetime, timedelta, date
+import logging
 import time
-import mechanize
+from datetime import date, datetime, timedelta
+from typing import Any, Dict, NamedTuple, Optional
 
-CONF_AUTH_ID = 'authId'
-CONF_SYSTEM_ID = 'systemId'
-CONF_ECU_ID = 'ecuId'
-CONF_NAME = 'name'
-CONF_SUNSET = 'sunset'
-
-SENSOR_ENERGY_DAY = 'energy_day'
-SENSOR_ENERGY_LATEST = 'energy_latest'
-SENSOR_ENERGY_TOTAL = 'energy_total'
-SENSOR_POWER_MAX = 'power_max_day'
-SENSOR_POWER_LATEST = 'power_latest'
-SENSOR_TIME = 'date'
-
-EXTRA_TIMESTAMP = 'timestamp'
-
+import homeassistant.helpers.config_validation as cv
+import requests
+import voluptuous as vol  # type: ignore
+from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
 from homeassistant.const import (
-    CONF_NAME, SUN_EVENT_SUNRISE, SUN_EVENT_SUNSET, STATE_UNAVAILABLE, ENERGY_KILO_WATT_HOUR, POWER_WATT, TIME_MILLISECONDS
-    )
+    CONF_NAME,
+    DEVICE_CLASS_ENERGY,
+    ENERGY_KILO_WATT_HOUR,
+    POWER_WATT,
+    STATE_UNAVAILABLE,
+    SUN_EVENT_SUNRISE,
+    SUN_EVENT_SUNSET,
+)
+from homeassistant.helpers.sun import get_astral_event_date
+from homeassistant.util.dt import as_local
+from homeassistant.util.dt import utcnow as dt_utcnow
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_AUTH_ID): cv.string,
-    vol.Required(CONF_SYSTEM_ID): cv.string,
-    vol.Required(CONF_ECU_ID): cv.string,
-    vol.Optional(CONF_NAME, default='APsystems'): cv.string,
-    vol.Optional(CONF_SUNSET, default='off'): cv.string
-})
+CONF_AUTH_ID = "authId"
+CONF_ECU_ID = "ecuId"
+CONF_SUNSET = "sunset"
+CONF_SYSTEM_ID = "systemId"
 
-# Key: ['json_key', 'unit', 'icon']
+EXTRA_TIMESTAMP = "timestamp"
+SENSOR_ENERGY_DAY = "energy_day"
+SENSOR_ENERGY_LATEST = "energy_latest"
+SENSOR_ENERGY_TOTAL = "energy_total"
+SENSOR_POWER_LATEST = "power_latest"
+SENSOR_POWER_MAX = "power_max_day"
+SENSOR_TIME = "date"
+
+# to move apsystems timestamp to UTC
+OFFSET_MS = (
+    timedelta(hours=7).total_seconds() / timedelta(milliseconds=1).total_seconds()
+)
+
+
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+    {
+        vol.Required(CONF_AUTH_ID): cv.string,
+        vol.Required(CONF_SYSTEM_ID): cv.string,
+        vol.Required(CONF_ECU_ID): cv.string,
+        vol.Optional(CONF_NAME, default="APsystems"): cv.string,
+        vol.Optional(CONF_SUNSET, default="off"): cv.string,
+    }
+)
+
+
+class ApsMetadata(NamedTuple):
+    json_key: str
+    icon: str
+    unit: str = ""
+    state_class: Optional[str] = None
+
+
 SENSORS = {
-    SENSOR_ENERGY_DAY:  ['total', ENERGY_KILO_WATT_HOUR, 'mdi:solar-power'],
-    SENSOR_ENERGY_LATEST: ['energy', ENERGY_KILO_WATT_HOUR, 'mdi:solar-power'],
-    SENSOR_POWER_MAX:     ['max', POWER_WATT, 'mdi:solar-power'],
-    SENSOR_POWER_LATEST:  ['power', POWER_WATT, 'mdi:solar-power'],
-    SENSOR_TIME:  ['time', "", 'mdi:clock-outline']
+    SENSOR_ENERGY_DAY: ApsMetadata(
+        json_key="total",
+        unit=ENERGY_KILO_WATT_HOUR,
+        icon="mdi:solar-power",
+        state_class="total_increasing",
+    ),
+    SENSOR_ENERGY_LATEST: ApsMetadata(
+        json_key="energy",
+        unit=ENERGY_KILO_WATT_HOUR,
+        icon="mdi:solar-power",
+    ),
+    SENSOR_POWER_MAX: ApsMetadata(
+        json_key="max",
+        unit=POWER_WATT,
+        icon="mdi:solar-power",
+    ),
+    SENSOR_POWER_LATEST: ApsMetadata(
+        json_key="power",
+        unit=POWER_WATT,
+        icon="mdi:solar-power",
+    ),
+    SENSOR_TIME: ApsMetadata(
+        json_key="time",
+        icon="mdi:clock-outline",
+    ),
 }
 
-SCAN_INTERVAL = timedelta(minutes=5)
+SCAN_INTERVAL = timedelta(minutes=1)
 _LOGGER = logging.getLogger(__name__)
 
+DOMAIN = "apsystems"
+
+offset_hours = (8 * 60 * 60 * 1000) - (time.localtime().tm_gmtoff * 1000)
+_LOGGER.debug("Offset set to : "+ str(offset_hours/(60*60*1000)) + " hours")
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     auth_id = config[CONF_AUTH_ID]
@@ -62,18 +106,30 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     fetcher = APsystemsFetcher(hass, auth_id, system_id, ecu_id)
 
     sensors = []
-    for type in SENSORS:
-        metadata = SENSORS[type]
+    for type, metadata in SENSORS.items():
         sensor_name = config.get(CONF_NAME).lower() + "_" + type
-        sensor = ApsystemsSensor(sensor_name, auth_id, system_id, sunset, fetcher, metadata)
+        sensor = ApsystemsSensor(
+            sensor_name, auth_id, system_id, sunset, fetcher, metadata
+        )
         sensors.append(sensor)
 
     async_add_entities(sensors, True)
 
-class ApsystemsSensor(Entity):
+
+class ApsystemsSensor(SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, sensor_name, auth_id, system_id, sunset, fetcher, metadata):
+    _attr_device_class = DEVICE_CLASS_ENERGY
+
+    def __init__(
+        self,
+        sensor_name: str,
+        auth_id: str,
+        system_id: str,
+        sunset: str,
+        fetcher: APsystemsFetcher,
+        metadata: ApsMetadata,
+    ):
         """Initialize the sensor."""
         self._state = None
         self._name = sensor_name
@@ -82,12 +138,17 @@ class ApsystemsSensor(Entity):
         self._sunset = sunset
         self._fetcher = fetcher
         self._metadata = metadata
-        self._attributes = {}
+        self._attributes: Dict[str, Any] = {}
 
     @property
     def name(self):
         """Return the name of the sensor."""
         return self._name
+
+    @property
+    def state_class(self):
+        """Return the state_class of the sensor."""
+        return self._metadata.state_class
 
     @property
     def state(self):
@@ -102,16 +163,16 @@ class ApsystemsSensor(Entity):
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement."""
-        return self._metadata[1]
+        return self._metadata.unit
 
     @property
     def icon(self):
         """Icon to use in the frontend, if any."""
-        return self._metadata[2]
+        return self._metadata.icon
 
     @property
     def available(self, utc_now=None):
-        _LOGGER.debug("Sunset variable: "+self._sunset)
+        _LOGGER.debug(f"Sunset variable: {self._sunset=}")
 
         if self._sunset == 'False':
             _LOGGER.debug("Sensor is running. Sunset is disabled")
@@ -125,10 +186,16 @@ class ApsystemsSensor(Entity):
         stop_time = self.find_stop_time(now)
 
         if as_local(start_time) <= now <= as_local(stop_time):
-            _LOGGER.debug("Sensor is running. Start/Stop time: {}, {}".format(as_local(start_time), as_local(stop_time)))
+            _LOGGER.debug(
+                "Sensor is running. Start/Stop time: "
+                f"{as_local(start_time)}, {as_local(stop_time)}"
+            )
             return True
         else:
-            _LOGGER.debug("Sensor is not running. Start/Stop time: {}, {}".format(as_local(start_time), as_local(stop_time)))
+            _LOGGER.debug(
+                "Sensor is not running. Start/Stop time: "
+                f"{as_local(start_time)}, {as_local(stop_time)}"
+            )
             return False
 
     async def async_update(self):
@@ -150,8 +217,6 @@ class ApsystemsSensor(Entity):
         if isinstance(value, list):
             value = value[-1]
 
-        offset_hours = 7 * 60 * 60 * 1000  # to move apsystems timestamp to UTC
-
         #get timestamp
         index_time = SENSORS[SENSOR_TIME][0]
         timestamp = ap_data[index_time][-1]
@@ -163,7 +228,7 @@ class ApsystemsSensor(Entity):
 
         self._attributes[EXTRA_TIMESTAMP] = timestamp
 
-        _LOGGER.debug(value)
+        _LOGGER.debug(self._name +':'+str(value))
         self._state = value
 
     def find_start_time(self, now):
@@ -180,9 +245,11 @@ class ApsystemsSensor(Entity):
 class APsystemsFetcher:
     url_login = "https://www.apsystemsema.com/ema/intoDemoUser.action?id="
     url_data = "https://www.apsystemsema.com/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax"
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Chrome/50.0.2661.102 Firefox/62.0'}
-    cache = None
-    cache_timestamp = None
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Chrome/50.0.2661.102 Firefox/62.0"
+    }
+    cache: Optional[Dict[Any, Any]] = None
+    cache_timestamp: Optional[int] = None
     running = False
 
     def __init__(self, hass, auth_id, system_id, ecu_id):
@@ -196,7 +263,7 @@ class APsystemsFetcher:
         s = requests.Session()
 
         r = await self._hass.async_add_executor_job(
-             s.request, "GET", self.url_login + self._auth_id, None, None, self.headers
+            s.request, "GET", self.url_login + self._auth_id, None, None, self.headers
         )
         return s
 
@@ -205,8 +272,8 @@ class APsystemsFetcher:
         try:
             browser = await self.login()
 
-            #TODO should this not have offset too on it ?
-            post_data = {'queryDate': datetime.today().strftime("%Y%m%d"),
+            #OLD version datetime.today().strftime("%Y%m%d")
+            post_data = {'queryDate': (datetime.now() - timedelta(seconds=(offset_hours/1000))).strftime("%Y%m%d"),
                       'selectedValue': self._ecu_id,
                       'systemId': self._system_id}
 
@@ -217,7 +284,13 @@ class APsystemsFetcher:
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             _LOGGER.debug('starting: ' + now)
             result_data = await self._hass.async_add_executor_job(
-             s.request, "POST", self.url_data, None, post_data, self.headers, browser.cookies.get_dict()
+                s.request,
+                "POST",
+                self.url_data,
+                None,
+                post_data,
+                self.headers,
+                browser.cookies.get_dict(),
             )
 
             _LOGGER.debug("status code data: " + str(result_data.status_code))
@@ -226,6 +299,7 @@ class APsystemsFetcher:
                 self.cache = None
             else:
                 self.cache = result_data.json()
+            _LOGGER.debug(self.cache)
 
             self.cache_timestamp = int(round(time.time() * 1000))
         finally:
@@ -244,11 +318,17 @@ class APsystemsFetcher:
             return self.cache
         else:
             # rules to check cache
-            offset_hours = 7 * 60 * 60 * 1000
             timestamp_event = int(self.cache['time'][-1]) + offset_hours  # apsystems have 8h delayed in timestamp from UTC
             timestamp_now = int(round(time.time() * 1000))
-            cache_time = 6 * 60 * 1000  # 6 minutes
-            request_time = 20 * 1000  # 20 seconds to avoid request what is already requested
+            cache_time = (5 * 60 * 1000) - (10 *1000)  # 4:50 minutes
+            request_time = 60 * 1000  # 60 seconds to avoid request what is already requested
+            _LOGGER.debug("timestamp_now " + str(timestamp_now))
+            _LOGGER.debug("timestamp_event " + str(timestamp_event))
+            _LOGGER.debug("timediff " + str(timestamp_now - timestamp_event))
+            _LOGGER.debug("cache_time " + str(cache_time))
+            _LOGGER.debug("self.cache_timestamp " + str(self.cache_timestamp))
+            _LOGGER.debug("timediff " + str(timestamp_now - self.cache_timestamp))
+            _LOGGER.debug("request_time " + str(request_time))
 
             if (timestamp_now - timestamp_event > cache_time) and (timestamp_now - self.cache_timestamp > request_time):
                 await self.run()
