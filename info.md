@@ -39,4 +39,19 @@ Get the system id inside the ```managementClickCustomer()```.
 
 4 - sunset attribute could be on or off
 
+### Debug
+To get debug info in the logs do
+```yaml
+logger:
+  default: info
+  logs:
+    custom_components.apsystems: debug
+```
+
+and then grep the log for output
+
+```bash
+grep apsystem home-assistant.log
+```
+
 [![Buy me a beer!](https://img.shields.io/badge/Buy%20me%20a%20beer!-%F0%9F%8D%BA-yellow.svg)](https://www.paypal.com/donate/?hosted_button_id=RWTHA7XKSMSZC)
