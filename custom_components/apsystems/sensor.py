@@ -9,15 +9,18 @@ from typing import Any, Dict, NamedTuple, Optional
 import homeassistant.helpers.config_validation as cv
 import requests
 import voluptuous as vol  # type: ignore
-from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
+from homeassistant.components.sensor import (
+    PLATFORM_SCHEMA,
+     SensorEntity,
+    SensorDeviceClass,
+    )
 from homeassistant.const import (
     CONF_NAME,
-    DEVICE_CLASS_ENERGY,
-    ENERGY_KILO_WATT_HOUR,
-    POWER_WATT,
     STATE_UNAVAILABLE,
     SUN_EVENT_SUNRISE,
     SUN_EVENT_SUNSET,
+    UnitOfEnergy,
+    UnitOfPower,
 )
 from homeassistant.helpers.sun import get_astral_event_date
 from homeassistant.util.dt import as_local
@@ -63,23 +66,23 @@ class ApsMetadata(NamedTuple):
 SENSORS = {
     SENSOR_ENERGY_DAY: ApsMetadata(
         json_key="total",
-        unit=ENERGY_KILO_WATT_HOUR,
+        unit=UnitOfEnergy.KILO_WATT_HOUR,
         icon="mdi:solar-power",
         state_class="total_increasing",
     ),
     SENSOR_ENERGY_LATEST: ApsMetadata(
         json_key="energy",
-        unit=ENERGY_KILO_WATT_HOUR,
+        unit=UnitOfEnergy.KILO_WATT_HOUR,
         icon="mdi:solar-power",
     ),
     SENSOR_POWER_MAX: ApsMetadata(
         json_key="max",
-        unit=POWER_WATT,
+        unit=UnitOfPower.WATT,
         icon="mdi:solar-power",
     ),
     SENSOR_POWER_LATEST: ApsMetadata(
         json_key="power",
-        unit=POWER_WATT,
+        unit=UnitOfPower.WATT,
         icon="mdi:solar-power",
     ),
     SENSOR_TIME: ApsMetadata(
@@ -119,7 +122,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
 class ApsystemsSensor(SensorEntity):
     """Representation of a Sensor."""
 
-    _attr_device_class = DEVICE_CLASS_ENERGY
+    _attr_device_class = SensorDeviceClass.ENERGY
 
     def __init__(
         self,

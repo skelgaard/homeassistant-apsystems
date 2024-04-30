@@ -60,6 +60,15 @@ and then grep the log for output
 ```bash
 grep apsystem home-assistant.log
 ```
+### http request test
+here is the two commands to run, todo a request test if it works
+### Login
+GET https://www.apsystemsema.com/ema/intoDemoUser.action?id=apsystemsem_authid
+
+### Get Data
+POST https://www.apsystemsema.com/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax
+
+queryDate=20230615&selectedValue=apsystemsema_ecu_id&systemId=apsystemsema_system_id
 
 ### Thanx
 Thanx to the author bgbraga(https://github.com/bgbraga/) for his work, but as he has left this is in a none working stage, i have fixed the problems
