@@ -64,6 +64,12 @@ class ApsMetadata(NamedTuple):
 
 
 SENSORS = {
+    SENSOR_ENERGY_TOTAL: ApsMetadata(
+        json_key="lifetime",
+        unit=UnitOfEnergy.KILO_WATT_HOUR,
+        icon="mdi:solar-power",
+        state_class="total_increasing",
+    ),
     SENSOR_ENERGY_DAY: ApsMetadata(
         json_key="total",
         unit=UnitOfEnergy.KILO_WATT_HOUR,
@@ -248,6 +254,8 @@ class ApsystemsSensor(SensorEntity):
 class APsystemsFetcher:
     url_login = "https://www.apsystemsema.com/ema/intoDemoUser.action?id="
     url_data = "https://www.apsystemsema.com/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax"
+    url_data2 = "https://www.apsystemsema.com/ema/ajax/getDashboardApiAjax/getDashboardProductionInfoAjax"
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Chrome/50.0.2661.102 Firefox/62.0"
     }
@@ -295,6 +303,15 @@ class APsystemsFetcher:
                 self.headers,
                 browser.cookies.get_dict(),
             )
+            result_data2 = await self._hass.async_add_executor_job(
+                s.request,
+                "POST",
+                self.url_data2,
+                None,
+                None,
+                self.headers,
+                browser.cookies.get_dict(),
+            )
 
             _LOGGER.debug("status code data: " + str(result_data.status_code))
 
@@ -302,6 +319,7 @@ class APsystemsFetcher:
                 self.cache = None
             else:
                 self.cache = result_data.json()
+                self.cache["lifetime"] = result_data2.json()["lifetime"];
             _LOGGER.debug(self.cache)
 
             self.cache_timestamp = int(round(time.time() * 1000))
