@@ -1,9 +1,9 @@
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs) [![apsystems](https://img.shields.io/github/v/release/skelgaard/homeassistant-apsystems.svg)](https://github.com/skelgaard/homeassistant-apsystems) ![Maintenance](https://img.shields.io/maintenance/yes/2022.svg)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs) [![apsystems](https://img.shields.io/github/v/release/skelgaard/homeassistant-apsystems.svg)](https://github.com/skelgaard/homeassistant-apsystems) ![Maintenance](https://img.shields.io/maintenance/yes/2025.svg)
 
 # APsystems Sensor for Home Assistant
 This component simplifies the integration of a APsystems inverter:
 * creates up to individuals sensors for easy display or use in automations
-* collects power (W) and energy (KWH) every 5 minutes. There is also a sensor for daily total and max power.
+* collects produced, consumed and exported 'instantaneous powers' (W) and 'total energies' (KWH) every 5 minutes. There is also a sensor for daily total energy and max power produced.
 * extract data from apsystemsema.com web portal instead of hack the ECU connection
 * supports any kind of ASsystems inverter or ECU
 * if enabled, pauses from sunset to sunrise (basically when there no sun)
@@ -11,7 +11,7 @@ This component simplifies the integration of a APsystems inverter:
 * there is a date sensor to identify exactly date/time refers each sensor data
 
 ### URL's Utilised
-The URL called is ``https://apsystemsema.com/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax``
+The URL called are ``https://apsystemsema.com/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax``, ``https://www.apsystemsema.com/ema/ajax/getReportApiAjax/getPowerWithAllParameterOnCurrentDayAjax`` and ``https://www.apsystemsema.com/ema/ajax/getReportApiAjax/findMeterEcuEveryYearEnergyInLifeTime``
 It is only called from sunset to sunrise and the sensor going offline at night
 
 ### Installation
@@ -19,32 +19,14 @@ Use [HACS](https://custom-components.github.io/hacs/) to point to this github UR
 https://github.com/skelgaard/homeassistant-apsystems
 
 ### Configuration
-Use your apsystemsema.com to configure the configuration.yaml.
+Use your apsystemsema.com to configure the addon.
 
-```yaml
-# Minimal configuration.yaml entry:
-sensor:
-  - platform: apsystems
-    authId: apsystemsem_authid
-    systemId: apsystemsema_system_id
-    ecuId: apsystemsema_ecu_id
-    sunset: off
-```
 1 - set "Allow visitors to access to this system" and get the authid from here
 
-2 - your systemId is found at apsystemsema.com. See the page source code and at the Settings Menu there is a code like that:
-```html
-<span>Settings</span>
-<ul>
-    <li onclick="managementClickCustomer('YOUR SYSTEM ID')"><a>Settings</a></li>
-    <li onclick="intoFaq(10)"><a>Help</a></li>
-</ul>
-```
-Get the system id inside the ```managementClickCustomer()```.
+2 - your systemId is found at apsystemsema.com. click on the modules or report->system data->ecudata and the systemid is in the dropdown
 
-3 - There is an ecu id data at https://apsystemsema.com/ema/security/optmainmenu/intoLargeReport.action
-
-4 - sunset attribute could be on or off
+### No data an error in the logs ?
+If you see no data an error in the logs, make sure you can login on https://apsystemsema.com and don't see a captcha, if you do, solve the captcha and the data should start to come in again.
 
 ### Debug
 To get debug info in the logs do
@@ -52,7 +34,7 @@ To get debug info in the logs do
 logger:
   default: info
   logs:
-    custom_components.apsystems: debug
+    custom_components.apsystems_api: debug
 ```
 
 and then grep the log for output
@@ -68,7 +50,7 @@ GET https://www.apsystemsema.com/ema/intoDemoUser.action?id=apsystemsem_authid
 ### Get Data
 POST https://www.apsystemsema.com/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax
 
-queryDate=20230615&selectedValue=apsystemsema_ecu_id&systemId=apsystemsema_system_id
+queryDate=20250901&selectedValue=apsystemsema_ecu_id&systemId=apsystemsema_system_id
 
 ### Thanx
 Thanx to the author bgbraga(https://github.com/bgbraga/) for his work, but as he has left this is in a none working stage, i have fixed the problems

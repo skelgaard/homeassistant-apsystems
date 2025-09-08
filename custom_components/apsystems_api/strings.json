@@ -1,0 +1,39 @@
+{
+    "title": "ApSystems",
+    "config": {
+        "flow_title": "ApSystems setting",
+        "step": {
+            "user": {
+                "title": "Setting",
+                "description": "Feel the form",
+                "data": {
+                    "authId": "Authorization id",
+                    "systemId": "System id",
+                    "ecuId": "ECU id",
+                    "viewId": "View id",
+                    "panels": "Panels",
+                    "name": "Name"
+                },
+                "data_description": {}
+            }
+        }
+    },
+    "options": {
+        "flow_title": "ApSystems setting",
+        "step": {
+            "init": {
+                "title": "Setting",
+                "description": "Feel the form",
+                "data": {
+                    "authId": "Authorization id",
+                    "systemId": "System id",
+                    "ecuId": "ECU id",
+                    "viewId": "View id",
+                    "panels": "Panels",
+                    "name": "Name"
+                },
+                "data_description": {}
+            }
+        }
+    }
+}

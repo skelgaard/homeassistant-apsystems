@@ -1,9 +1,0 @@
-{
-  "domain": "apsystems",
-  "name": "APsystems",
-  "documentation": "https://github.com/skelgaard/homeassistant-apsystems/blob/master/README.md",
-  "dependencies": [],
-  "codeowners": ["@skelgaard"],
-  "requirements": ["mechanize==0.4.5"],
-  "version": "1.0.10"
-}
