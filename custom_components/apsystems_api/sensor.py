@@ -161,13 +161,30 @@ class ApsystemsSensor(SensorEntity):
 
 
 class APsystemsFetcher(SensorEntity):
-    url_login = "https://www.apsystemsema.com/ema/intoDemoUser.action?id="
-    url_datas = (
-        "https://www.apsystemsema.com/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax"
-#        ,"https://www.apsystemsema.com/ema/ajax/getReportApiAjax/getPowerWithAllParameterOnCurrentDayAjax"
-        ,"https://www.apsystemsema.com/ema/ajax/getDashboardApiAjax/getDashboardProductionInfoAjax"
+    """Polls the APsystems EMA website and feeds the sensor entities.
+
+    Both regional deployments (international ".com" and China ".cn") expose
+    the exact same API paths, only the domain differs. The domain is therefore
+    built at runtime from the region stored in the config entry
+    (``CONF_SERVER``), so switching servers no longer requires patching the
+    source code by hand after every update.
+    """
+
+    # Relative API paths -- independent from the server region.
+    PATH_LOGIN = "/ema/intoDemoUser.action?id="
+    PATH_DATAS = (
+        "/ema/ajax/getReportApiAjax/getPowerOnCurrentDayAjax"
+#        ,"/ema/ajax/getReportApiAjax/getPowerWithAllParameterOnCurrentDayAjax"
+        ,"/ema/ajax/getDashboardApiAjax/getDashboardProductionInfoAjax"
     )
-    url_data_panel = "https://www.apsystemsema.com/ema/ajax/getViewAjax/getViewPowerByViewAjax"
+    PATH_DATA_PANEL = "/ema/ajax/getViewAjax/getViewPowerByViewAjax"
+
+    # Default URLs (international server). Kept as class attributes for
+    # backwards compatibility; they are overridden per instance below.
+    url_login = DEFAULT_BASE_URL + PATH_LOGIN
+    url_datas = tuple(DEFAULT_BASE_URL + p for p in PATH_DATAS)
+    url_data_panel = DEFAULT_BASE_URL + PATH_DATA_PANEL
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:52.0) Chrome/50.0.2661.102 Firefox/62.0"
     }
@@ -183,6 +200,17 @@ class APsystemsFetcher(SensorEntity):
         self._ecu_id = ecu_id
         self._view_id = view_id
         self._sensors: List[ApsystemsSensor] = sensors
+
+        # Region of the EMA server. Config entries created before this option
+        # existed carry no CONF_SERVER key and silently use the default region.
+        self._server = get_server((entry_infos.data or {}).get(CONF_SERVER))
+        self._base_url = self._server["base_url"]
+        self.url_login = self._base_url + self.PATH_LOGIN
+        self.url_datas = tuple(self._base_url + p for p in self.PATH_DATAS)
+        self.url_data_panel = self._base_url + self.PATH_DATA_PANEL
+        _LOGGER.debug(
+            "APsystems EMA server: %s (%s)", self._server["label"], self._base_url
+        )
 
     async def login(self):
         s = requests.Session()

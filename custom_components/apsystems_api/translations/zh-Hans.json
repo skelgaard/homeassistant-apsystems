@@ -1,0 +1,41 @@
+{
+    "title": "APsystems",
+    "config": {
+        "flow_title": "APsystems 设置",
+        "step": {
+            "user": {
+                "title": "设置",
+                "description": "填写 APsystems EMA 账号信息，并选择所连接的服务器区域。",
+                "data": {
+                    "authId": "授权 ID (authId)",
+                    "systemId": "系统 ID (systemId)",
+                    "ecuId": "ECU 编号",
+                    "viewId": "视图 ID (viewId)",
+                    "panels": "组件/支路列表",
+                    "server": "服务器区域",
+                    "name": "名称"
+                },
+                "data_description": {}
+            }
+        }
+    },
+    "options": {
+        "flow_title": "APsystems 设置",
+        "step": {
+            "init": {
+                "title": "设置",
+                "description": "修改账号信息或切换服务器区域（中国站 .cn / 国际站 .com）。",
+                "data": {
+                    "authId": "授权 ID (authId)",
+                    "systemId": "系统 ID (systemId)",
+                    "ecuId": "ECU 编号",
+                    "viewId": "视图 ID (viewId)",
+                    "panels": "组件/支路列表",
+                    "server": "服务器区域",
+                    "name": "名称"
+                },
+                "data_description": {}
+            }
+        }
+    }
+}

@@ -26,6 +26,21 @@ _USER_FORM = vol.Schema({
     vol.Optional(CONF_VIEW_ID): cv.string,
     vol.Optional(CONF_NAME, default="APsystems"): cv.string,
     vol.Optional(CONF_PANELS, default=[]): selector.TextSelector(selector.TextSelectorConfig(multiple=True)),
+    vol.Optional(CONF_SERVER, default=DEFAULT_SERVER): selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=[
+                selector.SelectOptionDict(
+                    value=SERVER_COM,
+                    label=SERVERS[SERVER_COM]["label"],
+                ),
+                selector.SelectOptionDict(
+                    value=SERVER_CN,
+                    label=SERVERS[SERVER_CN]["label"],
+                ),
+            ],
+            mode=selector.SelectSelectorMode.DROPDOWN,
+        )
+    ),
 })
 
 

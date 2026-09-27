@@ -12,6 +12,7 @@
                     "ecuId": "ECU id",
                     "viewId": "View id",
                     "panels": "Panels",
+                    "server": "Server region",
                     "name": "Name"
                 },
                 "data_description": {}
@@ -30,6 +31,7 @@
                     "ecuId": "ECU id",
                     "viewId": "View id",
                     "panels": "Panels",
+                    "server": "Server region",
                     "name": "Name"
                 },
                 "data_description": {}
